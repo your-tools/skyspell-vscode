@@ -3,17 +3,23 @@ patterns {
 }
 
 project {
+  JSON
+  Json
   Skyspell
+  Uri
+  cmd
   commonjs
   eslint
   js
   json
+  pwd
   skyspell
   stderr
   stdout
   tdd
   tsc
   ui
+  uri
   vscode
 }
 
@@ -32,8 +38,8 @@ global {
   src
   subfolder
 }
-extensions {
 
+extensions {
   ts {
     async
     const

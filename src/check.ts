@@ -4,12 +4,7 @@ import { exec } from 'child_process';
 
 
 export default function checkProject() {
-    console.log('hello ...');
-
     const diagnosticCollection = vscode.languages.createDiagnosticCollection();
-    const diagnostics: vscode.Diagnostic[] =[];
-    const pwd = process.cwd();
-
     const files : string[] = [];
     const textDocuments = vscode.workspace.textDocuments;
     textDocuments.forEach(doc => {
@@ -18,7 +13,6 @@ export default function checkProject() {
         }
     });
 
-    const skyspellErrors = new Map<string, vscode.Diagnostic[]>();
     const cmd = "skyspell --output-format json check --non-interactive " + files.join(' ');
     console.log(cmd);
     const skyspellProcess = exec(cmd, (error, stdout, stderr) => {
@@ -27,15 +21,13 @@ export default function checkProject() {
                 vscode.window.showErrorMessage(`skyspell error: ${stderr}`);
             }
         }
-        
+
         const jsonErrors = JSON.parse(stdout);
         for (let file in jsonErrors) {
             const uri = vscode.Uri.from( { scheme: "file", path: process.cwd() + '/' + file });
             const diagnostics = jsonErrors[file].map((e: any) => diagnosticFromJson(e));
-            console.log(`setting diagnostics for uri: ${uri}`);
             diagnosticCollection.set(uri, diagnostics);
         }
-
     });
 
     skyspellProcess.on('exit', (code) => {
@@ -43,7 +35,7 @@ export default function checkProject() {
         if (code === 0) {
             vscode.window.showInformationMessage("skyspell: no errors found");
         }
-    }); 
+    });
 }
 
 const diagnosticFromJson = (e: any) => {

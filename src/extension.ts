@@ -4,7 +4,7 @@ import checkProject from './check';
 export function activate(context: vscode.ExtensionContext) {
 	
 	let disposable = vscode.commands.registerCommand('skyspell.check', () => {
-		checkProject()
+		checkProject();
 	});
 
 	context.subscriptions.push(disposable);

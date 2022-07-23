@@ -10,14 +10,14 @@
 		"Other"
 	],
 	"activationEvents": [
-        "onCommand:skyspell.helloWorld"
+        "onCommand:skyspell.check"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "skyspell.helloWorld",
-				"title": "Hello World"
+				"command": "skyspell.check",
+				"title": "skyspell: check opened files for spelling errors"
 			}
 		]
 	},

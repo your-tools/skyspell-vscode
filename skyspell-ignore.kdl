@@ -1,0 +1,43 @@
+patterns {
+    yarn.lock
+}
+
+project {
+  Skyspell
+  commonjs
+  eslint
+  js
+  json
+  skyspell
+  stderr
+  stdout
+  tdd
+  tsc
+  ui
+  vscode
+}
+
+paths {
+  package.json {
+    prepublish
+  }
+}
+
+global {
+  Changelog
+  Fallthrough
+  README
+  dev
+  fallthrough
+  src
+  subfolder
+}
+extensions {
+
+  ts {
+    async
+    const
+    cwd
+    dirname
+  }
+}

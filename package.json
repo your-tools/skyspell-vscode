@@ -2,7 +2,7 @@
   "name": "skyspell-vscode",
   "displayName": "Skyspell",
   "description": "Skyspell extension for VS Code",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "publisher": "your-tools",
   "repository": "https://github.com/your-tools/skyspell-vscode",
   "license": "MIT",

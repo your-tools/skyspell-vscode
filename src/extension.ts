@@ -49,9 +49,11 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(undoCommand);
 
+  const selector: vscode.DocumentSelector = { scheme: "file" };
+
   context.subscriptions.push(
     vscode.languages.registerCodeActionsProvider(
-      "markdown",
+      selector,
       new SkyspellActions(),
       {
         providedCodeActionKinds: SkyspellActions.providedCodeActionKinds,

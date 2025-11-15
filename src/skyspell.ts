@@ -67,7 +67,7 @@ export class SkyspellRunner {
     const process = spawn("skyspell", fullArgs);
 
     process.stdout.on("data", (data) => {
-      this.stdOut = data;
+      this.stdOut += data;
     });
 
     process.stderr.on("data", (data) => {

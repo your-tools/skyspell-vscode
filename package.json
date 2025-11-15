@@ -16,7 +16,7 @@
   "contributes": {
     "commands": [
       {
-        "command": "extension.enableSpellChecking",
+        "command": "skyspell.enableSpellChecking",
         "title": "Enable spell checking"
       }
     ]

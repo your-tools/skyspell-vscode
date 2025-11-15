@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Checker } from "./checker";
+import Checker from "./checker";
 
 type State = { projectPath?: string };
 
@@ -38,7 +38,12 @@ export function activate(context: vscode.ExtensionContext) {
     await checker.runSkyspell();
   };
 
+  const handleClose = (doc: vscode.TextDocument) => {
+    diagnostics.delete(doc.uri);
+  };
+
   vscode.workspace.onDidSaveTextDocument(handleSave);
+  vscode.workspace.onDidCloseTextDocument(handleClose);
 
   context.subscriptions.push(disposable);
 }

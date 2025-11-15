@@ -2,7 +2,18 @@ import { spawn } from "child_process";
 import { once } from "events";
 import * as vscode from "vscode";
 
-export class Checker {
+type SpellRange = {
+  line: number;
+  start_column: number;
+  end_column: number;
+};
+
+export type SpellError = {
+  word: string;
+  range: SpellRange;
+};
+
+export default class Checker {
   diagnostics: vscode.DiagnosticCollection;
   doc: vscode.TextDocument;
   errors: { [key: string]: SpellError[] };
@@ -88,13 +99,3 @@ export class Checker {
     vscode.window.showErrorMessage(message);
   }
 }
-type SpellRange = {
-  line: number;
-  start_column: number;
-  end_column: number;
-};
-
-export type SpellError = {
-  word: string;
-  range: SpellRange;
-};

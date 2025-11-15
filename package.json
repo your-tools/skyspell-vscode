@@ -17,7 +17,11 @@
     "commands": [
       {
         "command": "skyspell.enableSpellChecking",
-        "title": "Enable spell checking"
+        "title": "skyspell: enable spell checking"
+      },
+      {
+        "command": "skyspell.undo",
+        "title": "skyspell: undo last operation"
       }
     ]
   },

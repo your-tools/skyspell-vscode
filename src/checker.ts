@@ -1,6 +1,5 @@
-import { spawn } from "child_process";
-import { once } from "events";
 import * as vscode from "vscode";
+import { SkyspellRunner } from "./skyspell";
 
 export const DIAGNOSTIC_CODE = "skyspell-error";
 
@@ -15,10 +14,11 @@ export type SpellError = {
   range: SpellRange;
 };
 
+export type SpellErrors = { [key: string]: SpellError[] };
+
 export default class Checker {
   diagnostics: vscode.DiagnosticCollection;
   document: vscode.TextDocument;
-  errors: { [key: string]: SpellError[] };
   projectPath: string;
   stdErrr: string | null;
 
@@ -35,46 +35,24 @@ export default class Checker {
     this.document = document;
     this.diagnostics = diagnostics;
     this.stdErrr = null;
-    this.errors = {};
   }
 
   runSkyspell = async () => {
-    const process = spawn("skyspell", [
-      "--lang",
-      "en_US",
-      "--project-path",
-      this.projectPath,
-      "check",
-      "--non-interactive",
-      "--output-format",
-      "json",
-    ]);
+    const runner = new SkyspellRunner({ projectPath: this.projectPath });
 
-    process.stdout.on("data", (data) => {
-      this.errors = JSON.parse(data);
-    });
+    const args = ["check", "--non-interactive", "--output-format", "json"];
 
-    process.stderr.on("data", (data) => {
-      this.stdErrr = data;
-    });
+    await runner.run(args);
 
-    const [code] = await once(process, "close");
+    const errors: SpellErrors = JSON.parse(runner.stdOut);
 
-    this.onRunDone({ code });
+    this.processErrors(errors);
   };
 
-  onRunDone({ code }: { code: number }) {
-    if (code === 0) {
-      this.onRunOk();
-    } else {
-      this.onRunError(code);
-    }
-  }
-
-  onRunOk() {
+  processErrors(errors: SpellErrors) {
     const diagnostics: vscode.Diagnostic[] = [];
-    Object.entries(this.errors).forEach(([_path, errors]) => {
-      errors.forEach((error) => {
+    Object.entries(errors).forEach(([_path, errorsForPath]) => {
+      errorsForPath.forEach((error) => {
         const diagnostic = this.createDiagnostic(error);
         diagnostics.push(diagnostic);
       });
@@ -97,13 +75,5 @@ export default class Checker {
     diagnostic.source = "skyspell";
     diagnostic.code = DIAGNOSTIC_CODE;
     return diagnostic;
-  }
-
-  onRunError(code: number) {
-    let message = `Skyspell exited with code ${code}`;
-    if (this.stdErrr != null) {
-      message += "\n" + this.stdErrr;
-    }
-    vscode.window.showErrorMessage(message);
   }
 }

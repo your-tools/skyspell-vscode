@@ -28,7 +28,7 @@ export class SkyspellAction implements vscode.CodeActionProvider {
     const { range } = diagnostic;
     const word = document.getText(range);
 
-    const scopes: Scope[] = ["project", "file"];
+    const scopes: Scope[] = ["project", "file", "extension"];
     const actions = scopes.map((scope) =>
       this.createCommandAction({ document, word, diagnostic, scope })
     );

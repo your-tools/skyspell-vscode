@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import Checker from "./checker";
 import { ADD_WORD, SkyspellAction as SkyspellActions } from "./actions";
-import { addWord, Scope } from "./skyspell";
+import { addWord, Scope, undo } from "./skyspell";
 
 class State {
   projectPath?: string;
@@ -10,6 +10,9 @@ class State {
 const state = new State();
 
 export function activate(context: vscode.ExtensionContext) {
+  const diagnostics = vscode.languages.createDiagnosticCollection("skyspell");
+  context.subscriptions.push(diagnostics);
+
   const enableCommand = vscode.commands.registerCommand(
     "skyspell.enableSpellChecking",
     async () => {
@@ -21,16 +24,10 @@ export function activate(context: vscode.ExtensionContext) {
         state.projectPath = folder.uri.fsPath;
       }
 
-      const activeDoc = vscode.window.activeTextEditor?.document;
-      if (activeDoc) {
-        await refreshDiagnostics(activeDoc);
-      }
+      await refreshDiagnostics();
     }
   );
   context.subscriptions.push(enableCommand);
-
-  const diagnostics = vscode.languages.createDiagnosticCollection("skyspell");
-  context.subscriptions.push(diagnostics);
 
   const addWordCommand = vscode.commands.registerCommand(
     ADD_WORD,
@@ -40,8 +37,17 @@ export function activate(context: vscode.ExtensionContext) {
       await refreshDiagnostics(document);
     }
   );
-
   context.subscriptions.push(addWordCommand);
+
+  const undoCommand = vscode.commands.registerCommand(
+    "skyspell.undo",
+    async () => {
+      const { projectPath } = state;
+      await undo({ projectPath });
+      await refreshDiagnostics();
+    }
+  );
+  context.subscriptions.push(undoCommand);
 
   context.subscriptions.push(
     vscode.languages.registerCodeActionsProvider(
@@ -57,14 +63,19 @@ export function activate(context: vscode.ExtensionContext) {
     refreshDiagnostics(doc);
   };
 
-  const refreshDiagnostics = async (document: vscode.TextDocument) => {
+  const refreshDiagnostics = async (document?: vscode.TextDocument) => {
     const { projectPath } = state;
     if (!projectPath) {
       return;
     }
 
+    const actualDocument = document || vscode.window.activeTextEditor?.document;
+    if (!actualDocument) {
+      return;
+    }
+
     const checker = new Checker({
-      document,
+      document: actualDocument,
       diagnostics,
       projectPath,
     });

@@ -2,7 +2,7 @@ import { spawn } from "child_process";
 import { once } from "events";
 import * as vscode from "vscode";
 
-export type Scope = "global" | "project" | "file";
+export type Scope = "project" | "file";
 
 export const addWord = async ({
   word,
@@ -22,14 +22,13 @@ export const addWord = async ({
   const args = ["--lang", "en_US", "--project-path", projectPath, "add", word];
 
   switch (scope) {
-    case "global": {
-      break;
-    }
     case "project": {
       args.push("--project");
+      break;
     }
     case "file": {
       args.push("--relative-path", document.uri.fsPath);
+      break;
     }
   }
 

@@ -13,33 +13,39 @@ type SpellError = {
   range: SpellRange;
 };
 
-type State = {
-  projectPath?: string;
-  errors: { [key: string]: SpellError[] };
-  stdErrr?: string;
-};
+type State = { projectPath?: string };
+
+const state: State = {};
 
 class Checker {
-  state: State;
+  diagnostics: vscode.DiagnosticCollection;
+  doc: vscode.TextDocument;
+  errors: { [key: string]: SpellError[] };
+  projectPath: string;
+  stdErrr: string | null;
 
-  constructor() {
-    this.state = { errors: {} };
+  constructor({
+    doc,
+    diagnostics,
+    projectPath,
+  }: {
+    doc: vscode.TextDocument;
+    diagnostics: vscode.DiagnosticCollection;
+    projectPath: string;
+  }) {
+    this.projectPath = projectPath;
+    this.doc = doc;
+    this.diagnostics = diagnostics;
+    this.stdErrr = null;
+    this.errors = {};
   }
 
-  runSkyspell = async (
-    spellDiagnostics: vscode.DiagnosticCollection,
-    doc: vscode.TextDocument
-  ) => {
-    const { projectPath } = this.state;
-    if (!projectPath) {
-      return;
-    }
-
+  runSkyspell = async () => {
     const process = spawn("skyspell", [
       "--lang",
       "en_US",
       "--project-path",
-      projectPath,
+      this.projectPath,
       "check",
       "--non-interactive",
       "--output-format",
@@ -47,50 +53,35 @@ class Checker {
     ]);
 
     process.stdout.on("data", (data) => {
-      this.state.errors = JSON.parse(data);
+      this.errors = JSON.parse(data);
     });
 
     process.stderr.on("data", (data) => {
-      this.state.stdErrr = data;
+      this.stdErrr = data;
     });
 
     const [code] = await once(process, "close");
 
-    this.onRunDone({ code, spellDiagnostics, doc });
+    this.onRunDone({ code });
   };
 
-  onRunDone({
-    code,
-    spellDiagnostics,
-    doc,
-  }: {
-    code: number;
-    spellDiagnostics: vscode.DiagnosticCollection;
-    doc: vscode.TextDocument;
-  }) {
+  onRunDone({ code }: { code: number }) {
     if (code === 0) {
-      this.onRunOk({ spellDiagnostics, doc });
+      this.onRunOk();
     } else {
       this.onRunError(code);
     }
   }
 
-  onRunOk({
-    spellDiagnostics,
-    doc,
-  }: {
-    spellDiagnostics: vscode.DiagnosticCollection;
-    doc: vscode.TextDocument;
-  }) {
-    const { errors } = this.state;
+  onRunOk() {
     const diagnostics: vscode.Diagnostic[] = [];
-    Object.entries(errors).forEach(([path, errors]) => {
+    Object.entries(this.errors).forEach(([path, errors]) => {
       errors.forEach((error) => {
         const { range: spellRange, word } = error;
         const { line, start_column, end_column } = spellRange;
 
         const start = new vscode.Position(line - 1, start_column - 1);
-        const end = new vscode.Position(line - 1, end_column - 1);
+        const end = new vscode.Position(line - 1, end_column);
         const range = new vscode.Range(start, end);
         const diagnostic = new vscode.Diagnostic(
           range,
@@ -101,20 +92,17 @@ class Checker {
         diagnostics.push(diagnostic);
       });
     });
-    spellDiagnostics.set(doc.uri, diagnostics);
+    this.diagnostics.set(this.doc.uri, diagnostics);
   }
 
   onRunError(code: number) {
     let message = `Skyspell exited with code ${code}`;
-    const { stdErrr } = this.state;
-    if (stdErrr) {
-      message += "\n" + stdErrr;
+    if (this.stdErrr != null) {
+      message += "\n" + this.stdErrr;
     }
     vscode.window.showErrorMessage(message);
   }
 }
-
-const checker = new Checker();
 
 export function activate(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerCommand(
@@ -125,7 +113,7 @@ export function activate(context: vscode.ExtensionContext) {
       const folders = vscode.workspace.workspaceFolders;
       if (folders) {
         const folder = folders[0];
-        checker.state.projectPath = folder.uri.fsPath;
+        state.projectPath = folder.uri.fsPath;
       }
     }
   );
@@ -136,7 +124,18 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(spellDiagnostics);
 
   const handleSave = async (doc: vscode.TextDocument) => {
-    await checker.runSkyspell(spellDiagnostics, doc);
+    const { projectPath } = state;
+    if (!projectPath) {
+      return;
+    }
+
+    const checker = new Checker({
+      doc,
+      diagnostics: spellDiagnostics,
+      projectPath,
+    });
+
+    await checker.runSkyspell();
   };
 
   vscode.workspace.onDidSaveTextDocument(handleSave);

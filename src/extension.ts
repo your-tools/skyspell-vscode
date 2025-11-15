@@ -1,73 +1,129 @@
 import * as vscode from "vscode";
 import Checker from "./checker";
-import { ADD_WORD, SkyspellAction as SkyspellActions } from "./actions";
+import { SkyspellAction as SkyspellActions } from "./actions";
 import { addWord, Scope, undo } from "./skyspell";
 
-class State {
-  projectPath?: string;
-}
+export const ADD_WORD = "skyspell.addWord";
+export const ENABLE = "skyspell.enable";
+export const DISABLE = "skyspell.disable";
+export const UNDO = "skyspell.undo";
 
-const state = new State();
+class Extension {
+  context: vscode.ExtensionContext;
+  diagnostics: vscode.DiagnosticCollection;
+  projectPath: string | null;
+  enabled: boolean;
 
-export function activate(context: vscode.ExtensionContext) {
-  const diagnostics = vscode.languages.createDiagnosticCollection("skyspell");
-  context.subscriptions.push(diagnostics);
+  constructor(context: vscode.ExtensionContext) {
+    this.context = context;
+    this.projectPath = null;
+    this.enabled = false;
+    this.diagnostics = this.createDiagnostics();
+  }
 
-  const enableCommand = vscode.commands.registerCommand(
-    "skyspell.enableSpellChecking",
-    async () => {
-      vscode.window.showInformationMessage("Spell checking enabled");
+  createDiagnostics() {
+    const diagnostics = vscode.languages.createDiagnosticCollection("skyspell");
+    this.context.subscriptions.push(diagnostics);
+    return diagnostics;
+  }
 
-      const folders = vscode.workspace.workspaceFolders;
-      if (folders) {
-        const folder = folders[0];
-        state.projectPath = folder.uri.fsPath;
-      }
+  registerCommands() {
+    const enableCommand = vscode.commands.registerCommand(ENABLE, () =>
+      this.enableSkyspell()
+    );
 
-      await refreshDiagnostics();
-    }
-  );
-  context.subscriptions.push(enableCommand);
+    const disableCommand = vscode.commands.registerCommand(DISABLE, () =>
+      this.disableSkyspell()
+    );
 
-  const addWordCommand = vscode.commands.registerCommand(
-    ADD_WORD,
-    async (document: vscode.TextDocument, word: string, scope: Scope) => {
-      const { projectPath } = state;
-      await addWord({ word, document, scope, projectPath });
-      await refreshDiagnostics(document);
-    }
-  );
-  context.subscriptions.push(addWordCommand);
+    const addWordCommand = vscode.commands.registerCommand(
+      ADD_WORD,
+      (document: vscode.TextDocument, word: string, scope: Scope) =>
+        this.addWord(document, word, scope)
+    );
 
-  const undoCommand = vscode.commands.registerCommand(
-    "skyspell.undo",
-    async () => {
-      const { projectPath } = state;
-      await undo({ projectPath });
-      await refreshDiagnostics();
-    }
-  );
-  context.subscriptions.push(undoCommand);
+    const undoCommand = vscode.commands.registerCommand(UNDO, () =>
+      this.undo()
+    );
 
-  const selector: vscode.DocumentSelector = { scheme: "file" };
+    [enableCommand, disableCommand, addWordCommand, undoCommand].forEach(
+      (command) => this.context.subscriptions.push(command)
+    );
+  }
 
-  context.subscriptions.push(
-    vscode.languages.registerCodeActionsProvider(
+  registerActionProviders() {
+    const selector: vscode.DocumentSelector = { scheme: "file" };
+    const metadata: vscode.CodeActionProviderMetadata = {
+      providedCodeActionKinds: SkyspellActions.providedCodeActionKinds,
+    };
+    const provider = new SkyspellActions();
+
+    const actionsProvider = vscode.languages.registerCodeActionsProvider(
       selector,
-      new SkyspellActions(),
-      {
-        providedCodeActionKinds: SkyspellActions.providedCodeActionKinds,
-      }
-    )
-  );
+      provider,
+      metadata
+    );
+    this.context.subscriptions.push(actionsProvider);
+  }
 
-  const handleSave = async (doc: vscode.TextDocument) => {
-    refreshDiagnostics(doc);
-  };
+  registerEvents() {
+    const onSave = vscode.workspace.onDidSaveTextDocument(
+      (document: vscode.TextDocument) => this.handleSave(document)
+    );
+    const onClose = vscode.workspace.onDidCloseTextDocument(
+      (document: vscode.TextDocument) => this.handleClose(document)
+    );
+    [onSave, onClose].forEach((event) =>
+      this.context.subscriptions.push(event)
+    );
+  }
 
-  const refreshDiagnostics = async (document?: vscode.TextDocument) => {
-    const { projectPath } = state;
-    if (!projectPath) {
+  async enableSkyspell() {
+    vscode.window.showInformationMessage("Spell checking enabled");
+
+    const folders = vscode.workspace.workspaceFolders;
+    if (folders) {
+      const folder = folders[0];
+      this.projectPath = folder.uri.fsPath;
+    }
+
+    await this.refreshDiagnostics();
+  }
+
+  async disableSkyspell() {
+    vscode.window.showInformationMessage("Spell checking disabled");
+    this.diagnostics.clear();
+    this.enabled = false;
+  }
+
+  async addWord(document: vscode.TextDocument, word: string, scope: Scope) {
+    if (!this.projectPath) {
+      return;
+    }
+
+    await addWord({ word, document, scope, projectPath: this.projectPath });
+    await this.refreshDiagnostics(document);
+  }
+
+  async undo() {
+    if (!this.projectPath) {
+      return;
+    }
+
+    await undo({ projectPath: this.projectPath });
+    await this.refreshDiagnostics();
+  }
+
+  async handleSave(_document: vscode.TextDocument) {
+    if (this.enabled) this.refreshDiagnostics();
+  }
+
+  async handleClose(document: vscode.TextDocument) {
+    this.diagnostics.delete(document.uri);
+  }
+
+  refreshDiagnostics = async (document?: vscode.TextDocument) => {
+    if (!this.projectPath) {
       return;
     }
 
@@ -78,17 +134,17 @@ export function activate(context: vscode.ExtensionContext) {
 
     const checker = new Checker({
       document: actualDocument,
-      diagnostics,
-      projectPath,
+      diagnostics: this.diagnostics,
+      projectPath: this.projectPath,
     });
 
     await checker.runSkyspell();
   };
+}
 
-  const handleClose = (doc: vscode.TextDocument) => {
-    diagnostics.delete(doc.uri);
-  };
-
-  vscode.workspace.onDidSaveTextDocument(handleSave);
-  vscode.workspace.onDidCloseTextDocument(handleClose);
+export function activate(context: vscode.ExtensionContext) {
+  const extension = new Extension(context);
+  extension.registerCommands();
+  extension.registerActionProviders();
+  extension.registerEvents();
 }

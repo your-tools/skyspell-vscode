@@ -1,8 +1,7 @@
 import * as vscode from "vscode";
 import { DIAGNOSTIC_CODE } from "./checker";
 import { Scope } from "./skyspell";
-
-export const ADD_WORD = "skyspell.addWord";
+import { ADD_WORD } from "./extension";
 
 export class SkyspellAction implements vscode.CodeActionProvider {
   public static readonly providedCodeActionKinds = [

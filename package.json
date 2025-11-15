@@ -17,12 +17,16 @@
   "contributes": {
     "commands": [
       {
-        "command": "skyspell.enableSpellChecking",
-        "title": "skyspell: enable spell checking"
+        "command": "skyspell.enable",
+        "title": "skyspell: Enable spell checking"
+      },
+      {
+        "command": "skyspell.disable",
+        "title": "skyspell: Disable spell checking"
       },
       {
         "command": "skyspell.undo",
-        "title": "skyspell: undo last operation"
+        "title": "skyspell: Undo last operation"
       }
     ]
   },

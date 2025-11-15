@@ -4,7 +4,8 @@
   "description": "Skyspell extension for VS Code",
   "version": "0.0.1",
   "publisher": "your-tools",
-  "repository": "",
+  "repository": "https://github.com/your-tools/skyspell-vscode",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.100.0"
   },

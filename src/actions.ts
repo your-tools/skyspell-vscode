@@ -9,8 +9,8 @@ export default class SkyspellActions implements vscode.CodeActionProvider {
   ];
   extension: Extension;
 
-  constructor(extesion: Extension) {
-    this.extension = extesion;
+  constructor(extension: Extension) {
+    this.extension = extension;
   }
 
   provideCodeActions(
@@ -39,7 +39,7 @@ export default class SkyspellActions implements vscode.CodeActionProvider {
 
     const scopes: Scope[] = ["project", "file", "extension"];
     const addActions = scopes.map((scope) =>
-      this.creatAddAction({ document, word, diagnostic, scope })
+      this.createAddAction({ document, word, diagnostic, scope })
     );
 
     return replaceActions.concat(addActions);
@@ -72,7 +72,7 @@ export default class SkyspellActions implements vscode.CodeActionProvider {
     return action;
   }
 
-  creatAddAction({
+  createAddAction({
     document,
     word,
     scope,

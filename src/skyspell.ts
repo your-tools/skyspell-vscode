@@ -2,9 +2,13 @@ import { spawn } from "child_process";
 import { once } from "events";
 import * as vscode from "vscode";
 
-export type Scope = "project" | "file" | "extension";
+export type Scope = "project" | "file" | "extension" | "lang";
 
-const getArgs = (scope: Scope, document: vscode.TextDocument): string[] => {
+const getArgs = (
+  scope: Scope,
+  document: vscode.TextDocument,
+  lang: string
+): string[] => {
   const path = document.uri.fsPath;
 
   if (scope === "project") {
@@ -19,6 +23,10 @@ const getArgs = (scope: Scope, document: vscode.TextDocument): string[] => {
     const parts = path.split(".");
     const extension = parts[parts.length - 1];
     return ["--extension", extension];
+  }
+
+  if (scope === "lang") {
+    return ["--lang", lang];
   }
 
   return [];
@@ -37,7 +45,7 @@ export const addWord = async ({
   document: vscode.TextDocument;
   lang: string;
 }) => {
-  const args = ["add", word].concat(getArgs(scope, document));
+  const args = ["add", word].concat(getArgs(scope, document, lang));
   const runner = new SkyspellRunner({ projectPath, lang });
   await runner.run(args);
 };

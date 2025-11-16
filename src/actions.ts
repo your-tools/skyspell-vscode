@@ -37,7 +37,7 @@ export default class SkyspellActions implements vscode.CodeActionProvider {
       this.createReplaceAction({ word, suggestion, diagnostic, document })
     );
 
-    const scopes: Scope[] = ["project", "file", "extension"];
+    const scopes: Scope[] = ["project", "file", "extension", "lang"];
     const addActions = scopes.map((scope) =>
       this.createAddAction({ document, word, diagnostic, scope })
     );

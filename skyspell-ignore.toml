@@ -1,0 +1,23 @@
+patterns = [
+    "LICENSE",
+    "eslint.config.mjs",
+    "package-lock.json",
+]
+project = [
+    "Skyspell",
+    "Uri",
+    "commonjs",
+    "eslint",
+    "skyspell",
+    "stderr",
+    "tsc",
+    "uri",
+    "vsce",
+    "vscode",
+]
+
+[paths]
+"package.json" = ["prepublish"]
+"src/skyspell.ts" = ["Args"]
+
+[skipped]

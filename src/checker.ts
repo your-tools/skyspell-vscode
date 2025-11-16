@@ -20,7 +20,7 @@ export default class Checker {
   diagnostics: vscode.DiagnosticCollection;
   document: vscode.TextDocument;
   projectPath: string;
-  stdErrr: string | null;
+  stdError: string | null;
 
   constructor({
     document,
@@ -34,7 +34,7 @@ export default class Checker {
     this.projectPath = projectPath;
     this.document = document;
     this.diagnostics = diagnostics;
-    this.stdErrr = null;
+    this.stdError = null;
   }
 
   runSkyspell = async () => {

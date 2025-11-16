@@ -20,7 +20,7 @@ export class Extension {
     this.context = context;
     this.diagnostics = this.createDiagnostics();
     const config = vscode.workspace.getConfiguration("skyspell");
-    this.lang = config.get<string>("lang") || "en_US";
+    this.lang = config.get<string>("lang") || "en";
     this.projectPath = null;
     this.enabled = false;
     this.suggestions = {};

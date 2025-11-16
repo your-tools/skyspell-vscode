@@ -42,6 +42,10 @@ export default class Checker {
 
     const args = ["check", "--non-interactive", "--output-format", "json"];
 
+    if (this.document.fileName.endsWith("COMMIT_EDITMSG")) {
+      args.push("--include-git-edit-message");
+    }
+
     await runner.run(args);
 
     const errors: SpellErrors = JSON.parse(runner.stdOut);

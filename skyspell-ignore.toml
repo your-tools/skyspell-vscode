@@ -18,6 +18,7 @@ project = [
 
 [paths]
 "package.json" = ["prepublish"]
+"src/checker.ts" = ["EDITMSG"]
 "src/skyspell.ts" = ["Args"]
 
 [skipped]

@@ -22,3 +22,7 @@ search = '"version": '
 [[before_commit]]
 name = "generate package lock"
 cmd = "npm install"
+
+[[after_push]]
+name = "generate extension"
+cmd = "vsce package"

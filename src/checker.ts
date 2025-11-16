@@ -48,7 +48,10 @@ export default class Checker {
   }
 
   runSkyspell = async () => {
-    const runner = new SkyspellRunner({ projectPath: this.projectPath });
+    const runner = new SkyspellRunner({
+      projectPath: this.projectPath,
+      lang: this.extension.lang,
+    });
 
     const args = ["check", "--non-interactive", "--output-format", "json"];
 

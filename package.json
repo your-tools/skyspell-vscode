@@ -28,7 +28,18 @@
         "command": "skyspell.undo",
         "title": "skyspell: Undo last operation"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Skyspell settings",
+      "type": "object",
+      "properties": {
+        "skyspell.lang": {
+          "type": "string",
+          "default": "en_US",
+          "description": "Language to use"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

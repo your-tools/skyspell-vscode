@@ -14,12 +14,15 @@ export class Extension {
   projectPath: string | null;
   enabled: boolean;
   suggestions: Suggestions;
+  lang: string;
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
+    this.diagnostics = this.createDiagnostics();
+    const config = vscode.workspace.getConfiguration("skyspell");
+    this.lang = config.get<string>("lang") || "en_US";
     this.projectPath = null;
     this.enabled = false;
-    this.diagnostics = this.createDiagnostics();
     this.suggestions = {};
   }
 
@@ -81,7 +84,9 @@ export class Extension {
   }
 
   async enableSkyspell() {
-    vscode.window.showInformationMessage("Spell checking enabled");
+    vscode.window.showInformationMessage(
+      `Spell checking enabled for ${this.lang}`
+    );
 
     const folders = vscode.workspace.workspaceFolders;
     if (folders) {
@@ -104,7 +109,13 @@ export class Extension {
       return;
     }
 
-    await addWord({ word, document, scope, projectPath: this.projectPath });
+    await addWord({
+      word,
+      document,
+      scope,
+      projectPath: this.projectPath,
+      lang: this.lang,
+    });
     await this.refreshDiagnostics(document);
   }
 
@@ -113,7 +124,7 @@ export class Extension {
       return;
     }
 
-    await undo({ projectPath: this.projectPath });
+    await undo({ projectPath: this.projectPath, lang: this.lang });
     await this.refreshDiagnostics();
   }
 
@@ -145,6 +156,7 @@ export class Extension {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+  const lang = vscode.workspace.getConfiguration("skyspell.language");
   const extension = new Extension(context);
   extension.registerCommands();
   extension.registerActionProviders();

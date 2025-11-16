@@ -29,19 +29,27 @@ export const addWord = async ({
   scope,
   projectPath,
   document,
+  lang,
 }: {
   word: string;
   scope: Scope;
   projectPath?: string;
   document: vscode.TextDocument;
+  lang: string;
 }) => {
   const args = ["add", word].concat(getArgs(scope, document));
-  const runner = new SkyspellRunner({ projectPath });
+  const runner = new SkyspellRunner({ projectPath, lang });
   await runner.run(args);
 };
 
-export const undo = async ({ projectPath }: { projectPath?: string }) => {
-  const runner = new SkyspellRunner({ projectPath });
+export const undo = async ({
+  projectPath,
+  lang,
+}: {
+  projectPath?: string;
+  lang: string;
+}) => {
+  const runner = new SkyspellRunner({ projectPath, lang });
   await runner.run(["undo"]);
 };
 
@@ -49,11 +57,13 @@ export class SkyspellRunner {
   projectPath: string | undefined;
   stdErr: string;
   stdOut: string;
+  lang: string;
 
-  constructor({ projectPath }: { projectPath?: string }) {
+  constructor({ projectPath, lang }: { projectPath?: string; lang: string }) {
     this.projectPath = projectPath;
     this.stdErr = "";
     this.stdOut = "";
+    this.lang = lang;
   }
 
   async run(args: string[]) {
@@ -61,7 +71,7 @@ export class SkyspellRunner {
       return;
     }
 
-    const baseArgs = ["--lang", "en_US", "--project-path", this.projectPath];
+    const baseArgs = ["--lang", this.lang, "--project-path", this.projectPath];
     const fullArgs = baseArgs.concat(args);
 
     const process = spawn("skyspell", fullArgs);

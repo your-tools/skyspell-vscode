@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { SkyspellRunner } from "./skyspell";
+import { Extension } from "./extension";
 
 export const DIAGNOSTIC_CODE = "skyspell-error";
 
@@ -15,26 +16,35 @@ export type SpellError = {
 };
 
 export type SpellErrors = { [key: string]: SpellError[] };
+export type Suggestions = { [key: string]: string[] };
+export type SpellResult = {
+  errors: SpellErrors;
+  suggestions: Suggestions;
+};
 
 export default class Checker {
   diagnostics: vscode.DiagnosticCollection;
   document: vscode.TextDocument;
   projectPath: string;
   stdError: string | null;
+  extension: Extension;
 
   constructor({
     document,
     diagnostics,
     projectPath,
+    extension,
   }: {
     document: vscode.TextDocument;
     diagnostics: vscode.DiagnosticCollection;
+    extension: Extension;
     projectPath: string;
   }) {
     this.projectPath = projectPath;
     this.document = document;
     this.diagnostics = diagnostics;
     this.stdError = null;
+    this.extension = extension;
   }
 
   runSkyspell = async () => {
@@ -48,9 +58,10 @@ export default class Checker {
 
     await runner.run(args);
 
-    const errors: SpellErrors = JSON.parse(runner.stdOut);
+    const result: SpellResult = JSON.parse(runner.stdOut);
 
-    this.processErrors(errors);
+    this.extension.suggestions = result.suggestions;
+    this.processErrors(result.errors);
   };
 
   processErrors(errors: SpellErrors) {

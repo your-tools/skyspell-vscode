@@ -1,12 +1,17 @@
 import * as vscode from "vscode";
-import { DIAGNOSTIC_CODE } from "./checker";
+import { DIAGNOSTIC_CODE, Suggestions } from "./checker";
 import { Scope } from "./skyspell";
-import { ADD_WORD } from "./extension";
+import { ADD_WORD, Extension } from "./extension";
 
-export class SkyspellAction implements vscode.CodeActionProvider {
+export default class SkyspellActions implements vscode.CodeActionProvider {
   public static readonly providedCodeActionKinds = [
     vscode.CodeActionKind.QuickFix,
   ];
+  extension: Extension;
+
+  constructor(extesion: Extension) {
+    this.extension = extesion;
+  }
 
   provideCodeActions(
     document: vscode.TextDocument,
@@ -27,14 +32,47 @@ export class SkyspellAction implements vscode.CodeActionProvider {
     const { range } = diagnostic;
     const word = document.getText(range);
 
-    const scopes: Scope[] = ["project", "file", "extension"];
-    const actions = scopes.map((scope) =>
-      this.createCommandAction({ document, word, diagnostic, scope })
+    const suggestions = this.extension.suggestions[word];
+    const replaceActions = suggestions.map((suggestion) =>
+      this.createReplaceAction({ word, suggestion, diagnostic, document })
     );
-    return actions;
+
+    const scopes: Scope[] = ["project", "file", "extension"];
+    const addActions = scopes.map((scope) =>
+      this.creatAddAction({ document, word, diagnostic, scope })
+    );
+
+    return replaceActions.concat(addActions);
   }
 
-  createCommandAction({
+  createReplaceAction({
+    word,
+    suggestion,
+    diagnostic,
+    document,
+  }: {
+    word: string;
+    suggestion: string;
+    diagnostic: vscode.Diagnostic;
+    document: vscode.TextDocument;
+  }): vscode.CodeAction {
+    const title = suggestion;
+    const action = new vscode.CodeAction(title, vscode.CodeActionKind.QuickFix);
+
+    const range = diagnostic.range;
+    action.edit = new vscode.WorkspaceEdit();
+
+    action.edit.replace(
+      document.uri,
+      new vscode.Range(range.start, range.end),
+      suggestion
+    );
+    action.diagnostics = [diagnostic];
+    action.isPreferred = true;
+    return action;
+  }
+
+  creatAddAction({
     document,
     word,
     scope,
@@ -55,6 +93,7 @@ export class SkyspellAction implements vscode.CodeActionProvider {
       arguments: [document, word, scope],
     };
     action.diagnostics = [diagnostic];
+
     return action;
   }
 }

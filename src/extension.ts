@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import Checker from "./checker";
-import { SkyspellAction as SkyspellActions } from "./actions";
+import Checker, { Suggestions } from "./checker";
+import SkyspellActions from "./actions";
 import { addWord, Scope, undo } from "./skyspell";
 
 export const ADD_WORD = "skyspell.addWord";
@@ -8,17 +8,19 @@ export const ENABLE = "skyspell.enable";
 export const DISABLE = "skyspell.disable";
 export const UNDO = "skyspell.undo";
 
-class Extension {
+export class Extension {
   context: vscode.ExtensionContext;
   diagnostics: vscode.DiagnosticCollection;
   projectPath: string | null;
   enabled: boolean;
+  suggestions: Suggestions;
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
     this.projectPath = null;
     this.enabled = false;
     this.diagnostics = this.createDiagnostics();
+    this.suggestions = {};
   }
 
   createDiagnostics() {
@@ -56,7 +58,7 @@ class Extension {
     const metadata: vscode.CodeActionProviderMetadata = {
       providedCodeActionKinds: SkyspellActions.providedCodeActionKinds,
     };
-    const provider = new SkyspellActions();
+    const provider = new SkyspellActions(this);
 
     const actionsProvider = vscode.languages.registerCodeActionsProvider(
       selector,
@@ -135,6 +137,7 @@ class Extension {
       document: actualDocument,
       diagnostics: this.diagnostics,
       projectPath: this.projectPath,
+      extension: this,
     });
 
     await checker.runSkyspell();

@@ -50,14 +50,16 @@ export default class Checker {
   };
 
   processErrors(errors: SpellErrors) {
-    const diagnostics: vscode.Diagnostic[] = [];
-    Object.entries(errors).forEach(([_path, errorsForPath]) => {
-      errorsForPath.forEach((error) => {
-        const diagnostic = this.createDiagnostic(error);
-        diagnostics.push(diagnostic);
-      });
+    this.diagnostics.clear();
+    Object.entries(errors).forEach(([path, errorsForPath]) => {
+      const uri = vscode.Uri.file(path);
+
+      const diagnosticsForPath = errorsForPath.map((error) =>
+        this.createDiagnostic(error)
+      );
+
+      this.diagnostics.set(uri, diagnosticsForPath);
     });
-    this.diagnostics.set(this.document.uri, diagnostics);
   }
 
   createDiagnostic(error: SpellError) {

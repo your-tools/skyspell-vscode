@@ -87,6 +87,7 @@ class Extension {
       this.projectPath = folder.uri.fsPath;
     }
 
+    this.enabled = true;
     await this.refreshDiagnostics();
   }
 
@@ -118,9 +119,7 @@ class Extension {
     if (this.enabled) this.refreshDiagnostics();
   }
 
-  async handleClose(document: vscode.TextDocument) {
-    this.diagnostics.delete(document.uri);
-  }
+  async handleClose(document: vscode.TextDocument) {}
 
   refreshDiagnostics = async (document?: vscode.TextDocument) => {
     if (!this.projectPath) {

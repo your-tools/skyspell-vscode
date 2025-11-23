@@ -16,7 +16,7 @@ const getArgs = (
   }
 
   if (scope === "file") {
-    return ["--relative-path", path];
+    return ["--path", path];
   }
 
   if (scope === "extension") {
